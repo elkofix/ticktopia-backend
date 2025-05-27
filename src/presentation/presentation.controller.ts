@@ -10,7 +10,8 @@ import {
   Logger,
   ParseUUIDPipe,
   Put,
-  UnauthorizedException
+  UnauthorizedException,
+  BadRequestException
 } from '@nestjs/common';
 import { PresentationService } from './presentation.service';
 import { CreatePresentationDto } from './dto/create-presentation.dto';
@@ -45,7 +46,7 @@ export class PresentationController {
       if (event.user.id != user.id) {
         throw new UnauthorizedException(`You can add presentations to events of your own`);
       }
-    
+
       const newPresentation = await this.presentationService.create(createPresentationDto);
 
       return newPresentation;
@@ -144,7 +145,10 @@ export class PresentationController {
 
       if (presentation.event.user.id != user.id) {
         throw new UnauthorizedException(`You can only update presentations that are associated with an event of your own`);
+      }
 
+      if (updatePresentationDto.eventId) {
+        throw new BadRequestException(`You cannot move a presententation from an event to another`);
       }
 
       const updatedPresentation = await this.presentationService.update(id, updatePresentationDto);
