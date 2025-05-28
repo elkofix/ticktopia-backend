@@ -173,7 +173,7 @@ export class PresentationController {
       }
 
       if (presentation.event.user.id != user.id) {
-        throw new UnauthorizedException(`You can only update presentations that are associated with an event of your own`);
+        throw new UnauthorizedException(`You can only delete presentations that are associated with an event of your own`);
       }
 
       const deletedPresentation = await this.presentationService.remove(id);

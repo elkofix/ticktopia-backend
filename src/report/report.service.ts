@@ -18,8 +18,6 @@ export interface SalesReport {
   }[]
 
 }
-
-
 export interface OcupationReport {
   eventId: string;
   eventName: string;

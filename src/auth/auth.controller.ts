@@ -172,4 +172,6 @@ export class AuthController {
   updateRolesToUser(@Param() params: FindOneUserDto, @Body() roles: UpdateRoleDto) {
     return this.authService.updateUserRoles(roles, params.id);
   }
+  
+
 }

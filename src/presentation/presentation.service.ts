@@ -1,11 +1,10 @@
-import { Injectable, Logger, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Presentation } from './entities/presentation.entity';
 import { CreatePresentationDto } from './dto/create-presentation.dto';
 import { UpdatePresentationDto } from './dto/update-presentation.dto';
 import { Event } from '../event/entities/event.entity';
-import e from 'express';
 
 @Injectable()
 export class PresentationService {
@@ -46,6 +45,25 @@ export class PresentationService {
     }
   }
 
+  async hasTickets(id: string): Promise<boolean> {
+    try {
+      const presentation = await this.presentationRepository.findOne({
+        where: { idPresentation: id },
+        relations: ['tickets'], // Cargar los tickets relacionados
+      });
+
+      if (!presentation) {
+        throw new NotFoundException(`Presentation with ID ${id} not found`);
+      }
+
+      return presentation.tickets.length > 0;
+    } catch (error) {
+      this.logger.error(`Error checking tickets for presentation ID ${id}`, error.stack);
+      throw error;
+    }
+  }
+
+
   async findOneUnRestricted(id: string) {
     try {
       const presentation = await this.presentationRepository.findOne({ where: { idPresentation: id }, relations: ['event'], });
@@ -60,7 +78,7 @@ export class PresentationService {
     try {
       const presentation = await this.presentationRepository.findOne({
         where: {
-          idPresentation: id, event: { isPublic: true }, 
+          idPresentation: id, event: { isPublic: true },
         }, relations: ['event'],
       });
       return presentation;
@@ -102,7 +120,7 @@ export class PresentationService {
   async update(id: string, updatePresentationDto: UpdatePresentationDto) {
     try {
       await this.presentationRepository.update(id, updatePresentationDto);
-      const updatedPresentation = await this.findOneUnRestricted(id); // Re-fetch the updated presentation
+      const updatedPresentation = await this.findOneUnRestricted(id); 
       return updatedPresentation;
     } catch (error) {
       this.logger.error(`Error updating presentation with ID ${id}`, error.stack);
@@ -111,25 +129,18 @@ export class PresentationService {
   }
 
   async remove(id: string) {
-    try {
-      // Verificamos si la presentación existe
-      const presentationToRemove = await this.findOneUnRestricted(id);
-      if (!presentationToRemove) {
-        throw new NotFoundException(`Presentation with ID ${id} not found`);
-      }
+    // Verificamos si la presentación existe
+    const presentationToRemove = await this.findOneUnRestricted(id);
 
-      // Intentamos eliminar la presentación
-      await this.presentationRepository.remove(presentationToRemove);
-      return presentationToRemove;
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        // Re-lanzamos la excepción NotFoundException sin transformarla
-        throw error;
-      }
-      // Capturamos cualquier otro tipo de error y lo convertimos en InternalServerErrorException
-      this.logger.error(`Error deleting presentation with ID ${id}`, error.stack);
-      throw new InternalServerErrorException('Error deleting presentation');
+    const hasTickets = await this.hasTickets(id)
+
+    if (hasTickets) {
+      throw new BadRequestException("Cannot delete a presentation that has tickets associated")
     }
+
+    await this.presentationRepository.remove(presentationToRemove!);
+    return presentationToRemove;
+
   }
 
 

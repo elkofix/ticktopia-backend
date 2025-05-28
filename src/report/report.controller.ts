@@ -3,20 +3,23 @@ import { ReportService } from './report.service';
 
 import { Auth } from '../auth/decorators/auth.decorator';
 import { ValidRoles } from '../auth/enums/valid-roles.enum';
+import { PdfService } from 'src/pdf/pdf.service';
 
 @Controller('report')
 export class ReportController {
-  constructor(private readonly reportService: ReportService) { }
+  constructor(private readonly reportService: ReportService, private readonly pdfService: PdfService) { }
 
   @Get("sales")
   @Auth(ValidRoles.admin)
-  generateSalesReport() {
-    return this.reportService.generateSalesReport();
+  async generateSalesReport() {
+    const report = await this.reportService.generateSalesReport();
+    return this.pdfService.generateSalesReportPdf(report, false);
   }
 
   @Get("ocupation")
   @Auth(ValidRoles.admin)
-  generateOcupationReport() {
-    return this.reportService.generateOcupationReport();
+  async generateOcupationReport() {
+    const report = await this.reportService.generateOcupationReport();
+    return this.pdfService.generateOccupationReportPdf(report, false);
   }
 }
