@@ -21,6 +21,10 @@ jobs:
           echo "BASE_URL=https://back.ticktopia.shop/api" >> .env
           echo "GOOGLE_APPLICATION_CREDENTIALS=./thinking-land-459213-k5-218b264bdc33.json" >> .env
           echo "FRONTEND_URL=http://localhost:8080" >> .env
+          echo "AZURE_CLIENT_ID=cdaa04a3-93b2-49a9-a939-16c1a0886b28" >> .env
+          echo "AZURE_CLIENT_SECRET=92V8Q~_X.bAMcwCVf1mVx7kMOezlnGtmq8K-Qc8c" >> .env
+          echo "AZURE_TENANT_ID=e994072b-523e-4bfe-86e2-442c5e10b244" >> .env
+          echo "AZURE_SUBSCRIPTION_ID=4aacf319-cc4f-4aa3-a3f8-71d4c1e63bdb" >> .env
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2

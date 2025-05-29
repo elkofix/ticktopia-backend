@@ -19,6 +19,7 @@ import { WebhookController } from './webhook/webhook.controller';
 import { WebhookModule } from './webhook/webhook.module';
 import { GcpModule } from './gcp/gcp.module';
 import { PdfModule } from './pdf/pdf.module';
+import { AzureModule } from './azure/azure.module';
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -44,7 +45,8 @@ import { PdfModule } from './pdf/pdf.module';
     ReportModule,
     WebhookModule,
     GcpModule,
-    PdfModule
+    PdfModule,
+    AzureModule
   ],
   controllers: [HealthController, SuccessController, FailedController, WebhookController],
   providers: [],
