@@ -25,7 +25,7 @@ WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/.env ./
-COPY --from=builder /app/thinking-land-459213-k5-ad5821b1ca9a.json ./
+COPY --from=builder /app/thinking-land-459213-k5-218b264bdc33.json ./
 # Instalar solo las dependencias de producción
 RUN npm install --only=production
 
