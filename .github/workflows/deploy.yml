@@ -19,12 +19,8 @@ jobs:
           echo "STRIPE_SECRET_KEY=sk_test_51QT6CHAs4cEkYxhecF1lP3ZsiQC7H3mgGK1nlv0VOPkGuOLUWBMqTO83eC5E1BSvhchgvyCYnjhMR4WgSyuXkJv100lm4twQAO" >> .env
           echo "STRIPE_SIGNATURE=whsec_3kfIgTkQqJ0iv9ecFR1R3CSAhcczMtz2" >> .env
           echo "BASE_URL=https://back.ticktopia.shop/api" >> .env
-          echo "GOOGLE_APPLICATION_CREDENTIALS=./thinking-land-459213-k5-ad5821b1ca9a.json" >> .env
+          echo "GOOGLE_APPLICATION_CREDENTIALS=./thinking-land-459213-k5-218b264bdc33.json" >> .env
           echo "FRONTEND_URL=http://localhost:8080" >> .env
-
-
-
-          
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
