@@ -89,6 +89,21 @@ export class PresentationService {
   }
 
 
+  async findByEventIdForManager(eventId: string): Promise<Presentation[]> {
+    try {
+      const presentations = await this.presentationRepository.find({
+        where: {
+          event: { id: eventId},
+        }, relations: ['event'],
+      });
+
+      return presentations;
+    } catch (error) {
+      this.logger.error(`Error fetching presentations for public event with ID ${eventId}`, error.stack);
+      throw new InternalServerErrorException('Error fetching presentations for public event');
+    }
+  }
+
   async findByEventId(eventId: string): Promise<Presentation[]> {
     try {
       const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
@@ -120,7 +135,7 @@ export class PresentationService {
   async update(id: string, updatePresentationDto: UpdatePresentationDto) {
     try {
       await this.presentationRepository.update(id, updatePresentationDto);
-      const updatedPresentation = await this.findOneUnRestricted(id); 
+      const updatedPresentation = await this.findOneUnRestricted(id);
       return updatedPresentation;
     } catch (error) {
       this.logger.error(`Error updating presentation with ID ${id}`, error.stack);

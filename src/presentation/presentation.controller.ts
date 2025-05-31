@@ -127,6 +127,26 @@ export class PresentationController {
     }
   }
 
+  @Get('manager/event/:id')
+  @Auth(ValidRoles.admin, ValidRoles.eventManager)
+  @ApiOperation({ summary: 'Get a presentation by ID' })
+  @ApiResponse({ status: 200, description: 'Presentation details' })
+  @ApiResponse({ status: 404, description: 'Presentation not found' })
+  async findByEventForManager(@Param('id', ParseUUIDPipe) id: string) {
+    try {
+      const presentation = await this.presentationService.findByEventIdForManager(id);
+
+      if (!presentation) {
+        throw new NotFoundException(`Presentations with Event ID ${id} not found`);
+      }
+
+      return presentation;
+    } catch (error) {
+      this.logger.error(`Error fetching presentation with ID ${id}`, error.stack);
+      throw error;
+    }
+  }
+
   @Put(':id')
   @ApiOperation({ summary: 'Update a presentation' })
   @ApiResponse({ status: 200, description: 'Presentation updated' })
