@@ -49,7 +49,7 @@ export class AuthService {
     const { email, password } = loginUserDto;
     const user = await this.userRepository.findOne({
       where: { email, isActive: true },
-      select: { email: true, password: true, id: true, name: true, lastname: true,isActive: true, roles: true }
+      select: { email: true, password: true, id: true, name: true, lastname: true, isActive: true, roles: true }
     });
 
     if (!user) throw new NotFoundException(`User with email ${email} not found`);
@@ -63,12 +63,12 @@ export class AuthService {
 
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // solo por HTTPS en producción
-      sameSite: 'strict',
+      secure: false, // solo por HTTPS en producción
+      sameSite: 'none', // <-- Permite cross-site
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 días
       path: '/',
     });
-    console.log(token); 
+    console.log(token);
     return { user }; // ya no devuelves el token, va en la cookie
   }
 
