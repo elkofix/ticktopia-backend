@@ -63,7 +63,7 @@ export class AuthService {
 
     res.cookie('token', token, {
       httpOnly: true,
-      secure: false, // solo por HTTPS en producción
+      secure: true, // solo por HTTPS en producción
       sameSite: 'none', // <-- Permite cross-site
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 días
       path: '/',
