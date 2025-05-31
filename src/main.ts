@@ -18,7 +18,7 @@ async function bootstrap() {
     })
   )
   app.enableCors({
-    origin: ['http://localhost:8080'],
+    origin: ['http://localhost:8080', "https://d16p2eueveuhxz.cloudfront.net"],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization']
