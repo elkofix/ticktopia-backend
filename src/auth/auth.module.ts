@@ -7,6 +7,9 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { PresentationModule } from 'src/presentation/presentation.module';
+import { EventModule } from 'src/event/event.module';
+import { TicketModule } from 'src/ticket/ticket.module';
 
 @Module({
   controllers: [AuthController],

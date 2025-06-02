@@ -9,7 +9,6 @@ import { PresentationService } from '../presentation/presentation.service';
 import { TicketService } from '../ticket/ticket.service';
 import { Ticket } from '../ticket/entities/ticket.entity';
 import { ValidRoles } from '../auth/enums/valid-roles.enum';
-
 @Injectable()
 export class SeedService {
 
@@ -19,6 +18,16 @@ export class SeedService {
   async runSeed() {
 
     const users = await this.insertNewUsers();
+    const donneyUser = await this.insertNewUser("donneys@gmail.com");
+    const donneyUserId = donneyUser!.user.id;
+    const cristianUser = await this.insertNewUser("guarros@gmail.com");
+    await this.insertNewUser("emptyuser@gmail.com");
+    await this.insertNewUser("delete@gmail.com");
+    await this.insertNewUser("edit@gmail.com");
+    await this.insertNewUserManager("noevents@gmail.com");
+    const deletePresentation = await this.insertNewUserManager("deletepresentation@gmail.com");
+    const deletePresentationId = deletePresentation!.user.id;
+    const cristianUserId = cristianUser?.user.id;
     const eventManagers = users.filter(result => result?.user.roles.includes(ValidRoles.eventManager))
     const eventManagerIds = eventManagers.map((eventManager) => eventManager!.user.id);
     const events = await this.insertNewEvents(eventManagerIds);
@@ -34,6 +43,16 @@ export class SeedService {
     const unactiveTicketIds = tickets
       .filter(ticket => !ticket.isActive)
       .map(ticket => ticket.id);
+    const presentationId = await this.insertPresentationTicketAvailable(eventsIds[0]);
+    const presentationId2 = await this.insertPresentationTicketUnavailable(eventsIds[0]);
+    await this.insertNewTicket(presentationId, donneyUserId!);
+    await this.insertNewTicket(presentationId2, cristianUserId!);
+    await this.insertNewTicketHistoric(presentationId, donneyUserId!);
+    console.log(deletePresentationId)
+    const eventId = await this.insertEvent(deletePresentationId!);
+    console.log(eventId);
+
+    await this.insertPresentationAlone(eventId);
     return { message: "SEED EXECUTED", activeTicketIds, unactiveTicketIds };
   }
 
@@ -50,18 +69,35 @@ export class SeedService {
     return await Promise.all(insertPromises);;
   }
 
+  async insertNewUser(email: string) {
+    return await this.userService.create({ email, password: "Hola1597!!!", lastname: "any", name: "any" });
+  }
+
+  async insertNewUserManager(email: string) {
+    return await this.userService.create({ email, password: "Hola1597!!!", lastname: "any", name: "any", roles: [ValidRoles.eventManager] });
+  }
+
+
   async insertNewEvents(eventManagerIds: string[]) {
     await this.eventService.deleteAll();
     const events = initialData.events;
     const insertPromises: Promise<Event>[] = [];
 
+    let managerIndex = 0;
+    const totalManagers = eventManagerIds.length;
+
     events.forEach(event => {
-      const randomManagerId = eventManagerIds[Math.floor(Math.random() * eventManagerIds.length)];
-      insertPromises.push(this.eventService.create({ ...event, userId: randomManagerId }) as Promise<Event>);
+      const managerId = eventManagerIds[managerIndex];
+      managerIndex = (managerIndex + 1) % totalManagers;
+
+      insertPromises.push(
+        this.eventService.create({ ...event, userId: managerId }) as Promise<Event>
+      );
     });
 
     return await Promise.all(insertPromises);
   }
+
 
   async insertNewPresentations(eventIds: string[]) {
     await this.presentationService.deleteAll();
@@ -78,6 +114,24 @@ export class SeedService {
 
     return await Promise.all(insertPromises);
   }
+
+  async insertNewTicket(presentationId: string, userId: string) {
+    await this.ticketService.create({
+      userId,
+      presentationId: presentationId,
+      ...{ isActive: true, isRedeemed: false }
+    })
+  }
+
+
+  async insertNewTicketHistoric(presentationId: string, userId: string) {
+    await this.ticketService.create({
+      userId,
+      presentationId: presentationId,
+      ...{ isActive: true, isRedeemed: true }
+    })
+  }
+
 
   async insertNewTickets(presentationIds: string[], userIds: string[]) {
     await this.ticketService.deleteAll();
@@ -115,6 +169,119 @@ export class SeedService {
     }
 
     return await Promise.all(insertPromises);
+  }
+
+
+  async insertEvent(userId: string): Promise<string> {
+    const { name, bannerPhotoUrl, isPublic } = initialData.events[0];
+    const { id } = await this.eventService.create({ name, bannerPhotoUrl, userId, isPublic });
+    return id;
+  }
+
+  async insertPresentationAlone(eventId: string): Promise<string> {
+    const {
+      ticketSaleAvailabilityDate,
+      ticketAvailabilityDate,
+      openDate,
+      startDate
+    } = await this.generateDatesForCurrentTicket();
+    const { place,
+      capacity,
+      latitude,
+      longitude,
+      price,
+      description,
+      city,
+    } = initialData.presentations[0];
+    const { idPresentation } = await this.presentationService.create({ place, eventId, capacity, latitude, longitude, price, description, city, ticketAvailabilityDate, ticketSaleAvailabilityDate, openDate, startDate, });
+    return idPresentation;
+  }
+
+  async insertPresentationTicketAvailable(eventId: string): Promise<string> {
+    const {
+      ticketSaleAvailabilityDate,
+      ticketAvailabilityDate,
+      openDate,
+      startDate
+    } = await this.generateDatesForCurrentTicket();
+    const { place,
+      capacity,
+      latitude,
+      longitude,
+      price,
+      description,
+      city,
+    } = initialData.presentations[0];
+    const { idPresentation } = await this.presentationService.create({ place, eventId, capacity, latitude, longitude, price, description, city, ticketAvailabilityDate, ticketSaleAvailabilityDate, openDate, startDate, });
+    return idPresentation;
+  }
+
+  async insertPresentationTicketUnavailable(eventId: string): Promise<string> {
+    const {
+      ticketSaleAvailabilityDate,
+      ticketAvailabilityDate,
+      openDate,
+      startDate
+    } = await this.generateDatesForFutureTicket();
+    const { place,
+      capacity,
+      latitude,
+      longitude,
+      price,
+      description,
+      city,
+    } = initialData.presentations[0];
+    const { idPresentation } = await this.presentationService.create({ place, eventId, capacity, latitude, longitude, price, description, city, ticketAvailabilityDate, ticketSaleAvailabilityDate, openDate, startDate, });
+    return idPresentation;
+  }
+
+  toColombiaDateString(date: Date): string {
+    // Colombia está en UTC-5, así que restamos 5 horas
+    const colombiaTime = new Date(date.getTime() - 5 * 60 * 60 * 1000);
+
+    const year = colombiaTime.getFullYear();
+    const month = String(colombiaTime.getMonth() + 1).padStart(2, '0');
+    const day = String(colombiaTime.getDate()).padStart(2, '0');
+    const hours = '07'; // fija a las 07:00:00 como pediste
+    const minutes = '00';
+    const seconds = '00';
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
+
+  async generateDatesForCurrentTicket() {
+    const now = new Date();
+
+    const ticketSaleAvailabilityDate = this.toColombiaDateString(new Date(now.getTime() - 2 * 86400000)); // hace 2 días
+    const ticketAvailabilityDate = this.toColombiaDateString(new Date(now.getTime() - 1 * 86400000)); // ayer
+    const openDate = this.toColombiaDateString(new Date(now.getTime() + 1 * 86400000)); // mañana
+    const startDate = this.toColombiaDateString(new Date(now.getTime() + 2 * 86400000)); // pasado mañana
+
+    return {
+      ticketSaleAvailabilityDate,
+      ticketAvailabilityDate,
+      openDate,
+      startDate
+    };
+  }
+
+
+  async generateDatesForFutureTicket() {
+    const now = new Date();
+
+    const oneDayMs = 86400000;
+
+    const ticketAvailabilityDate = this.toColombiaDateString(new Date(now.getTime() + 1 * oneDayMs)); // mañana
+    const ticketSaleAvailabilityDate = this.toColombiaDateString(new Date(now.getTime())); // hoy
+    const openDate = this.toColombiaDateString(new Date(now.getTime() + 2 * oneDayMs)); // pasado mañana
+    const startDate = this.toColombiaDateString(new Date(now.getTime() + 3 * oneDayMs)); // en tres días
+
+    return {
+      ticketSaleAvailabilityDate,
+      ticketAvailabilityDate,
+      openDate,
+      startDate
+    };
   }
 
 

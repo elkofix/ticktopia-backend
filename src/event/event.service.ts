@@ -5,7 +5,6 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { User } from '../auth/entities/user.entity';
 import { DataSource, DeepPartial, Repository } from 'typeorm';
-// Removed duplicate import of CreateEventDto
 import { isUUID } from 'class-validator';
 import { ValidRoles } from '../auth/enums/valid-roles.enum';
 import { instanceToPlain } from 'class-transformer';
@@ -110,12 +109,12 @@ export class EventService {
 
 
       if (event.user.id !== user.id) {
-        throw new ForbiddenException('You can only delete your own events');
+        throw new ForbiddenException('Solo puedes eliminar tus propios eventos');
       }
       const hasTickets = await this.hasAnyPresentationWithTickets(event.id);
 
       if (hasTickets) {
-        throw new BadRequestException("You cannot delete an event with existing tickets");
+        throw new BadRequestException("No puedes eliminar un evento que tiene presentaciones con tickets vendidos");
       }
 
       await this.eventRepository.remove(event);

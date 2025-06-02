@@ -54,4 +54,5 @@ export class SeedController {
   async executeSeed() {
     return this.seedService.runSeed();
   }
+  
 }

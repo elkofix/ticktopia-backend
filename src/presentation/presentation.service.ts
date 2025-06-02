@@ -150,7 +150,7 @@ export class PresentationService {
     const hasTickets = await this.hasTickets(id)
 
     if (hasTickets) {
-      throw new BadRequestException("Cannot delete a presentation that has tickets associated")
+      throw new BadRequestException("No se puede eliminar una presentación que tiene tickets asociados");
     }
 
     await this.presentationRepository.remove(presentationToRemove!);

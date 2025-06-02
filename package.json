@@ -40,6 +40,7 @@
     "cloudinary": "^2.6.1",
     "cookie-parser": "^1.4.7",
     "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
     "nest-postgres": "file:",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
