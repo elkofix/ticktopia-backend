@@ -64,7 +64,7 @@ export class AuthService {
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.DEPLOYMENT_PHASE === 'production', // Solo en producción
-      sameSite: 'strict', 
+      sameSite: process.env.DEPLOYMENT_PHASE === 'production' ? 'none' : 'strict',
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 días
       path: '/',
     });
