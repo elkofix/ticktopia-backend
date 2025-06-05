@@ -1,16 +1,4 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Patch,
-  Delete,
-  Param,
-  Body,
-  Query,
-  ParseUUIDPipe,
-  Put,
-} from '@nestjs/common';
-import { ApiTags, ApiResponse } from '@nestjs/swagger';
+import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
 import { EventService } from './event.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -18,72 +6,65 @@ import { Auth } from '../auth/decorators/auth.decorator';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { User } from '../auth/entities/user.entity';
 import { ValidRoles } from '../auth/enums/valid-roles.enum';
+import { Event } from './entities/event.entity';
 
+@Resolver(() => Event)
+export class EventResolver {
+  constructor(private readonly eventService: EventService) {}
 
-@ApiTags('Event')
-@Controller('event')
-export class EventController {
-  constructor(private readonly EventService: EventService,) { }
-
-  @Post('create')
-  @ApiResponse({ status: 201, description: 'Event was created' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
+  @Mutation(() => Event)
   @Auth(ValidRoles.eventManager)
-  create(@Body() createEventDto: CreateEventDto, @GetUser() user: User) {
-    // Asegura que el userId sea el del usuario autenticado
-    return this.EventService.create({ ...createEventDto, userId: user.id });
-  }
-
-  @Get('findAll')
-  @ApiResponse({ status: 200, description: 'All events returned' })
-  findAll(@Query('limit') limit: string, @Query('offset') offset: string) {
-    const parsedLimit = parseInt(limit, 10) || 10;
-    const parsedOffset = parseInt(offset, 10) || 0;
-    return this.EventService.findAll(parsedLimit, parsedOffset);
-  }
-
-  @Get('find/user')
-  @Auth(ValidRoles.admin, ValidRoles.eventManager)
-  async findAllByUserId(@GetUser() user: User) {
-    return this.EventService.findAllByUserId(user.id);
-  }
-
-  @Get('find/manager/:term')
-  @Auth(ValidRoles.admin, ValidRoles.eventManager)
-  findOneUnrestricted(@Param('term') term: string) {
-    return this.EventService.findOneUnrestricted(term);
-  }
-
-  @Get('find/:term')
-  findOne(@Param('term') term: string) {
-    return this.EventService.findOne(term);
-  }
-
-  @Put('update/:id')
-  @Auth(ValidRoles.eventManager)
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateEventDto: UpdateEventDto,
+  async createEvent(
+    @Args('createEventInput') createEventDto: CreateEventDto,
     @GetUser() user: User,
-  ) {
-    return this.EventService.update(id, updateEventDto, user);
+  ): Promise<Event> {
+    return this.eventService.create({ ...createEventDto, userId: user.id });
   }
 
-  @Delete('delete/:id')
-  @ApiResponse({ status: 200, description: 'Event was removed' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiResponse({ status: 403, description: 'Forbidden. Token related.' })
+  @Query(() => [Event])
+  async findAllEvents(
+    @Args('limit', { type: () => Int, defaultValue: 10 }) limit: number,
+    @Args('offset', { type: () => Int, defaultValue: 0 }) offset: number,
+  ): Promise<Event[]> {
+    return this.eventService.findAll(limit, offset);
+  }
+
+  @Query(() => [Event])
   @Auth(ValidRoles.admin, ValidRoles.eventManager)
-  remove(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User) {
-    return this.EventService.remove(id, user);
+  async findEventsByUser(@GetUser() user: User): Promise<Event[]> {
+    return this.eventService.findAllByUserId(user.id);
   }
 
-  @Delete('deleteAll')
-  @ApiResponse({ status: 200, description: 'All events removed' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
-  @Auth(ValidRoles.admin)
-  deleteAll() {
-    return this.EventService.deleteAll();
+  @Query(() => Event)
+  @Auth(ValidRoles.admin, ValidRoles.eventManager)
+  async findEventUnrestricted(
+    @Args('term') term: string,
+  ): Promise<Event> {
+    return this.eventService.findOneUnrestricted(term);
   }
+
+  @Query(() => Event)
+  async findEvent(@Args('term') term: string): Promise<Event> {
+    return this.eventService.findOne(term);
+  }
+
+  @Mutation(() => Event)
+  @Auth(ValidRoles.eventManager)
+  async updateEvent(
+    @Args('id') id: string,
+    @Args('updateEventInput') updateEventDto: UpdateEventDto,
+    @GetUser() user: User,
+  ): Promise<Event> {
+    return this.eventService.update(id, updateEventDto, user);
+  }
+
+  @Mutation(() => String)
+  @Auth(ValidRoles.admin, ValidRoles.eventManager)
+  async removeEvent(
+    @Args('id') id: string,
+    @GetUser() user: User,
+  ): Promise<string> {
+    return this.eventService.remove(id, user);
+  }
+
 }

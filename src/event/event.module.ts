@@ -1,18 +1,18 @@
 import { Module } from '@nestjs/common';
-import { EventController } from './event.controller';
 import { EventService } from './event.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { User } from '../auth/entities/user.entity';
 import { PassportModule } from '@nestjs/passport';
 import { Event } from './entities/event.entity';
+import { EventResolver } from './event.controller';
+import { Presentation } from 'src/presentation/entities/presentation.entity';
 
 @Module({
-  controllers: [EventController],
-  providers: [EventService],
+  providers: [EventResolver,EventService],
   exports: [EventService],
   imports: [PassportModule.register({ defaultStrategy: 'jwt'}),
-    TypeOrmModule.forFeature([  Event , User]),
+    TypeOrmModule.forFeature([Presentation,  Event , User]),
     AuthModule
   ]
 })

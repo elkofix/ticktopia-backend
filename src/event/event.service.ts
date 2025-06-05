@@ -5,9 +5,8 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { User } from '../auth/entities/user.entity';
 import { DataSource, DeepPartial, Repository } from 'typeorm';
-import { isUUID } from 'class-validator';
+import { validate as isUUID } from 'uuid';
 import { ValidRoles } from '../auth/enums/valid-roles.enum';
-import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class EventService {
@@ -18,10 +17,9 @@ export class EventService {
     private readonly eventRepository: Repository<Event>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-
   ) { }
 
-  async create(createEventDto: CreateEventDto & { userId: string }) {
+  async create(createEventDto: CreateEventDto & { userId: string }): Promise<Event> {
     try {
       const user = await this.userRepository.findOneBy({ id: createEventDto.userId });
 
@@ -39,13 +37,12 @@ export class EventService {
       const newEvent = this.eventRepository.create(createEventDto);
       const createdEvent = await this.eventRepository.save({ ...newEvent, user });
 
-      // 🧹 Eliminar manualmente el password antes de enviar la respuesta
-      if (createdEvent.user) {
+      // Eliminar manualmente el password antes de enviar la respuesta
+      if (createdEvent.user && createdEvent.user.password) {
         delete createdEvent.user.password;
       }
 
-      // 🧾 Transformar el objeto en uno plano si usas class-transformer
-      return instanceToPlain(createdEvent);
+      return createdEvent;
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -60,8 +57,7 @@ export class EventService {
     }
   }
 
-
-  async update(id: string, updateEventDto: UpdateEventDto, user: User) {
+  async update(id: string, updateEventDto: UpdateEventDto, user: User): Promise<Event> {
     try {
       const event = await this.eventRepository.findOne({
         where: { id },
@@ -75,6 +71,7 @@ export class EventService {
       if (event.user.id !== user.id) {
         throw new ForbiddenException('You can only update your own events');
       }
+
       const hasTickets = await this.hasAnyPresentationWithTickets(event.id);
       if (hasTickets && updateEventDto.isPublic === false) {
         throw new BadRequestException("You cannot change visibility of an event with existing tickets");
@@ -96,7 +93,7 @@ export class EventService {
     }
   }
 
-  async remove(id: string, user: User) {
+  async remove(id: string, user: User): Promise<string> {
     try {
       const event = await this.eventRepository.findOne({
         where: { id },
@@ -107,10 +104,10 @@ export class EventService {
         throw new NotFoundException(`Event with ID ${id} not found`);
       }
 
-
       if (event.user.id !== user.id) {
         throw new ForbiddenException('Solo puedes eliminar tus propios eventos');
       }
+
       const hasTickets = await this.hasAnyPresentationWithTickets(event.id);
 
       if (hasTickets) {
@@ -118,42 +115,61 @@ export class EventService {
       }
 
       await this.eventRepository.remove(event);
-      return event;
+      return `Event with id ${id} successfully removed`;
     } catch (error) {
       if (
         error instanceof NotFoundException ||
         error instanceof ForbiddenException ||
         error instanceof BadRequestException
       ) {
-        throw error;  // Re-throw expected exceptions
+        throw error;
       }
       this.logger.error(error.detail || error.message);
       this.handleExceptions(error);
-      throw new InternalServerErrorException('Unexpected error occurred during event removal');  // Ensure error is thrown
     }
   }
 
   async findOneUnrestricted(term: string): Promise<Event> {
     const event = await this.eventRepository.findOne({
-      where: [{ id: term}, { name: term }],
+      where: [{ id: term }, { name: term }],
       relations: ['user'],
     });
 
     if (!event) {
       throw new NotFoundException(`Event with id or name "${term}" not found`);
+    }
+
+    // Limpiar password si existe
+    if (event.user && event.user.password) {
+      delete event.user.password;
     }
 
     return event;
   }
 
   async findOne(term: string): Promise<Event> {
-    const event = await this.eventRepository.findOne({
-      where: [{ id: term, isPublic: true }, { name: term }],
-      relations: ['user'],
-    });
+    let event;
+
+    if (isUUID(term)) {
+      event = await this.eventRepository.findOne({
+        where: [{ id: term, isPublic: true }, { name: term }],
+        relations: ['user'],
+      });
+    } else {
+      event = await this.eventRepository.findOne({
+        where: [{ isPublic: true }, { name: term }],
+        relations: ['user'],
+      });
+    }
+
 
     if (!event) {
       throw new NotFoundException(`Event with id or name "${term}" not found`);
+    }
+
+    // Limpiar password si existe
+    if (event.user && event.user.password) {
+      delete event.user.password;
     }
 
     return event;
@@ -172,34 +188,43 @@ export class EventService {
     return !!result;
   }
 
-
-
-  async findAll(limit = 10, offset = 0) {
+  async findAll(limit = 10, offset = 0): Promise<Event[]> {
     try {
-      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+      const events = await this.eventRepository.find({
+        where: {
+          isPublic: true,
+        },
+        relations: ['user', 'presentations'],
+        take: limit,
+        skip: offset,
+      });
 
-      const events = await this.eventRepository
-        .createQueryBuilder('event')
-        .leftJoinAndSelect('event.user', 'user')
-        .leftJoinAndSelect('event.presentations', 'presentation')
-        .where('presentation.openDate >= :twelveHoursAgo', { twelveHoursAgo })
-        .andWhere('event.isPublic = :isPublic', { isPublic: true })
-        .take(limit)
-        .skip(offset)
-        .getMany();
+      // Limpiar passwords
+      events.forEach(event => {
+        if (event.user && event.user.password) {
+          delete event.user.password;
+        }
+      });
 
-      return instanceToPlain(events);
+      return events;
     } catch (error) {
       this.handleExceptions(error);
     }
   }
 
 
-
-  async findAllByUserId(userId: string) {
+  async findAllByUserId(userId: string): Promise<Event[]> {
     try {
       const events = await this.eventRepository.find({
-        where: { user: { id: userId } }
+        where: { user: { id: userId } },
+        relations: ['user'] // Agregar relación para consistencia
+      });
+
+      // Limpiar passwords
+      events.forEach(event => {
+        if (event.user && event.user.password) {
+          delete event.user.password;
+        }
       });
 
       return events;
@@ -209,7 +234,7 @@ export class EventService {
     }
   }
 
-  async deleteAll() {
+  async deleteAll(): Promise<{ message: string }> {
     try {
       await this.eventRepository.delete({});
       return { message: `All events deleted successfully` };
