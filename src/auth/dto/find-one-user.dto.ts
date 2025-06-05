@@ -1,15 +1,10 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { Field, InputType } from "@nestjs/graphql";
 import { IsNotEmpty, IsString, IsUUID } from "class-validator";
 
+@InputType()
 export class FindOneUserDto {
-
-    @ApiProperty({
-        description: 'A valid uuid',
-        nullable: false,
-        required: true,
-    })
-    @IsString()
-    @IsNotEmpty()
-    @IsUUID()
-    id: string
+  @Field(() => String, { description: 'A valid uuid' })
+  @IsString()
+  @IsNotEmpty()
+  id: string;
 }

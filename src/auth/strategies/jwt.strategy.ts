@@ -19,13 +19,8 @@ export class JwtStrategy extends PassportStrategy(Strategy){
         super({
             secretOrKey: configService.get('JWT_SECRET') as string ?? "super-secreto",
             // Cambia esta línea para extraer el token de la cookie
-            jwtFromRequest: ExtractJwt.fromExtractors([
-                (request: Request) => {
-                    // Extrae el token de la cookie llamada 'token'
-                    // Puedes cambiar 'token' por el nombre de tu cookie
-                    return request?.cookies?.token;
-                }
-            ])
+            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+
         })
     }
 

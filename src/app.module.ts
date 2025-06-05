@@ -20,10 +20,19 @@ import { WebhookModule } from './webhook/webhook.module';
 import { GcpModule } from './gcp/gcp.module';
 import { PdfModule } from './pdf/pdf.module';
 import { AzureModule } from './azure/azure.module';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { join } from 'path';
 @Module({
   imports: [
     ConfigModule.forRoot(),
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      autoSchemaFile: join(process.cwd(), 'src/schema.gql'), // Genera el schema automáticamente
+      context: ({ req, res }) => ({ req, res }), // Para usar autenticación basada en headers o cookies
+    }),
     TypeOrmModule.forRoot({
+
       type: 'postgres',
       host: process.env.DB_HOST ?? "dpg-d0qtl2emcj7s73ed5bk0-a.oregon-postgres.render.com",
       port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 5432,

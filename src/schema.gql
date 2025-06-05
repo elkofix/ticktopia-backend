@@ -1,0 +1,80 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type UserDto {
+  id: String!
+  email: String!
+  name: String!
+  lastname: String!
+  isActive: Boolean!
+  roles: [String!]!
+}
+
+type LoginResponseDto {
+  token: String!
+  user: UserDto!
+}
+
+type DeleteUserResponse {
+  message: String!
+}
+
+type Query {
+  users: [UserDto!]!
+  user(findOneUserInput: FindOneUserDto!): UserDto!
+}
+
+input FindOneUserDto {
+  """A valid uuid"""
+  id: String!
+}
+
+type Mutation {
+  register(createAuthInput: CreateAuthDto!): UserDto!
+  registerEventManager(createAuthInput: CreateAuthDto!): UserDto!
+  login(loginInput: LoginUserDto!): LoginResponseDto!
+  logout: String!
+  updateUser(findOneUserInput: FindOneUserDto!, updateAuthInput: UpdateAuthDto!): UserDto!
+  deleteUser(findOneUserInput: FindOneUserDto!): DeleteUserResponse!
+  updateUserRoles(findOneUserInput: FindOneUserDto!, updateRoleInput: UpdateRoleDto!): UserDto!
+}
+
+input CreateAuthDto {
+  """A valid email (unique)"""
+  email: String!
+
+  """The password must have a Uppercase, lowercase letter and a number"""
+  password: String!
+  name: String!
+  lastname: String!
+}
+
+input LoginUserDto {
+  """A valid email"""
+  email: String!
+  password: String!
+}
+
+input UpdateAuthDto {
+  """A valid email (unique)"""
+  email: String
+
+  """The password must have a Uppercase, lowercase letter and a number"""
+  password: String
+  name: String
+  lastname: String
+}
+
+input UpdateRoleDto {
+  """List of roles that we want to set to a user"""
+  roles: [ValidRoles!]!
+}
+
+"""Roles válidos para los usuarios"""
+enum ValidRoles {
+  admin
+  eventManager
+  client
+  ticketChecker
+}

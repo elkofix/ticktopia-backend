@@ -1,36 +1,25 @@
-import { BadRequestException, CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Observable } from 'rxjs';
-import { META_ROLES } from '../../decorators/role-protected/role-protected.decorator';
-import { User } from 'src/auth/entities/user.entity';
+import { GqlExecutionContext } from '@nestjs/graphql';
+import { ValidRoles } from 'src/auth/enums/valid-roles.enum';
 
 @Injectable()
 export class UserRoleGuard implements CanActivate {
+  constructor(private readonly reflector: Reflector) {}
 
-  constructor(private readonly reflector: Reflector){}
+  canActivate(context: ExecutionContext): boolean {
+    const validRoles: ValidRoles[] = this.reflector.get(
+      'roles',
+      context.getHandler(),
+    ) || [];
 
-  canActivate(
-    context: ExecutionContext,
-  ): boolean | Promise<boolean> | Observable<boolean> {
+    if (validRoles.length === 0) return true;
 
-    const validRoles: string[] = this.reflector.get(META_ROLES,
-      context.getHandler()
-    )
+    const ctx = GqlExecutionContext.create(context);
+    const { user } = ctx.getContext().req;
 
-    if(!validRoles) return true;
+    if (!user) return false;
 
-    if(validRoles.length === 0) return true;
-
-    const req = context.switchToHttp().getRequest();    
-    const user = req.user as User;
-
-    if(!user) throw new BadRequestException(`User not found`);
-
-    const hasValidRole = user.roles.some(role => validRoles.includes(role));
-
-    if(hasValidRole) return true;
-
-    throw new ForbiddenException(`User ${user.email} needs a valid role`);
-    
+    return validRoles.some((role) => user.roles.includes(role));
   }
 }

@@ -2,16 +2,19 @@ import { BadRequestException, Injectable, InternalServerErrorException, Logger, 
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { JwtPayload } from './interfaces/jwt.interface';
 import { JwtService } from '@nestjs/jwt';
 import { LoginUserDto } from './dto/Login-user.dto';
 import { plainToInstance } from 'class-transformer';
-import { UserDto } from './dto/find-user.dto';
+import { UserDtos } from './dto/find-user.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { UpdateRoleDto } from './dto/update-roles.dto';
 import { Response } from 'express'; // ✅ CORRECTO
+import { LoginResponseDto } from './dto/auth.response.dto';
+import { UserDto } from './dto/user.dto';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class AuthService {
@@ -33,23 +36,26 @@ export class AuthService {
       await this.userRepository.save(user);
       delete user.password;
 
-      return {
-        user: user,
-        token: this.getJwtToken({ id: user.id })
-      };
-
-
+      return user;
     } catch (error) {
       this.handleExceptions(error);
     }
   }
 
 
-  async login(loginUserDto: LoginUserDto, res: Response) {
+  async login(loginUserDto: LoginUserDto, res: Response): Promise<LoginResponseDto> {
     const { email, password } = loginUserDto;
     const user = await this.userRepository.findOne({
       where: { email, isActive: true },
-      select: { email: true, password: true, id: true, name: true, lastname: true, isActive: true, roles: true }
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        name: true,
+        lastname: true,
+        isActive: true,
+        roles: true
+      }
     });
 
     if (!user) throw new NotFoundException(`User with email ${email} not found`);
@@ -57,20 +63,18 @@ export class AuthService {
     if (!bcrypt.compareSync(password, user.password!))
       throw new UnauthorizedException(`Email or password incorrect`);
 
-    delete user.password;
-
     const token = this.getJwtToken({ id: user.id });
 
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.DEPLOYMENT_PHASE === 'production', // Solo en producción
-      sameSite: process.env.DEPLOYMENT_PHASE === 'production' ? 'none' : 'strict',
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 días
-      path: '/',
-    });
-    console.log(token);
-    return { user }; // ya no devuelves el token, va en la cookie
+    // Construimos el UserDto
+    const { password: _, ...safeUser } = user;
+    const userDto = new UserDto(safeUser); // Asegúrate de que `UserDto` tenga un constructor que acepte partial
+
+    return {
+      token,
+      user: userDto
+    };
   }
+
 
   async deleteAllUsers(): Promise<{ message: string }> {
     try {
@@ -83,20 +87,47 @@ export class AuthService {
   }
 
   async findById(id: string) {
-    const user = await this.userRepository.findOne({
-      where: { id },
-      select: {
-        id: true,
-        email: true,
-        roles: true,
+    try {
+      // Validación previa para evitar llegar a la DB si no es UUID
+      if (!isUUID(id)) {
+        throw new NotFoundException(`User with ID ${id} not found`);
       }
-    });
 
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      const user = await this.userRepository.findOne({
+        where: { id },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          lastname: true,
+          roles: true,
+          isActive: true
+        },
+      });
+
+      if (!user) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+      const { password: _, ...safeUser } = user;
+      const userDto = new UserDto(safeUser); // Asegúrate de que `UserDto` tenga un constructor que acepte partial
+      return userDto;
+    } catch (error) {
+      // Captura el error del driver de Postgres
+      if (
+        error instanceof QueryFailedError &&
+        (error as any).driverError?.code === '22P02'
+      ) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+
+      // También relanza si ya es un NotFoundException
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      // Otros errores no esperados (puedes loguearlos si deseas)
+      throw error;
     }
-
-    return user;
   }
 
   async findAll() {
@@ -165,6 +196,10 @@ export class AuthService {
 
 
   async updateUserRoles({ roles }: UpdateRoleDto, userId: string) {
+    if (!isUUID(userId)) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
     const user = await this.userRepository.findOneBy({ id: userId });
 
     if (!user) {

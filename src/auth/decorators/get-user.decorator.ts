@@ -1,16 +1,16 @@
-// get-user.decorator.ts
-import { createParamDecorator, ExecutionContext, InternalServerErrorException } from "@nestjs/common";
+import { createParamDecorator, ExecutionContext, InternalServerErrorException } from '@nestjs/common';
+import { GqlExecutionContext } from '@nestjs/graphql';
 
+export const GetUser = createParamDecorator(
+  (data: string | undefined, context: ExecutionContext) => {
+    
+    const ctx = GqlExecutionContext.create(context);
+    const user = ctx.getContext().req.user;
 
-export const getUserDecoratorFactory = (data: string | undefined, context: ExecutionContext): any => {
-  const req = context.switchToHttp().getRequest<{ user?: any| null }>(); 
-  const user = req.user;
+    if (!user) {
+      throw new InternalServerErrorException('User not found (request)');
+    }
 
-  if (!user) {
-    throw new InternalServerErrorException(`User not found`);
+    return data ? user[data] : user;
   }
-
-  return!data? user : user[data];
-};
-
-export const GetUser = createParamDecorator(getUserDecoratorFactory);
+);

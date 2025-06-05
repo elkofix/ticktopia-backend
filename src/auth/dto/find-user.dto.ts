@@ -1,11 +1,11 @@
 import { Exclude } from 'class-transformer';
 
-export class UserDto {
+export class UserDtos {
 
   @Exclude()
   password: string;
 
-  constructor(partial: Partial<UserDto>) {
+  constructor(partial: Partial<UserDtos>) {
     Object.assign(this, partial);
   }
 }

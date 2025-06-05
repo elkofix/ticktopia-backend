@@ -1,5 +1,4 @@
 import { Controller, Get } from '@nestjs/common';
-import { SeedService } from './seed.service';
 import {
   ApiTags,
   ApiOperation,
@@ -12,7 +11,7 @@ import {
 @ApiTags('Database')
 @Controller('seed')
 export class SeedController {
-  constructor(private readonly seedService: SeedService) {}
+  constructor() {}
 
   @Get()
   @ApiOperation({
@@ -52,7 +51,7 @@ export class SeedController {
     }
   })
   async executeSeed() {
-    return this.seedService.runSeed();
+    return "SEED EXECUTED"
   }
   
 }
