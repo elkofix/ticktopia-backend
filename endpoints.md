@@ -1,3 +1,59 @@
+User Fragment
+
+```graphql
+fragment UserFields on User {
+  id
+  email
+  name
+  lastname
+  roles
+}
+```
+
+```graphql
+fragment TicketFields on Ticket {
+  id
+  buyDate
+  isRedeemed
+  isActive
+  quantity
+}
+
+```
+
+Event Fragment
+```graphql
+fragment EventFields on Event {
+  id
+  name
+  bannerPhotoUrl
+  isPublic
+  user {
+    id
+    name
+    email
+  }
+}
+```
+
+Presentation Fragment
+```graphql
+fragment PresentationFields on Presentation {
+  idPresentation
+  place
+  capacity
+  price
+  startDate
+  openDate
+  city
+  description
+  latitude
+  longitude
+  ticketAvailabilityDate
+  ticketSaleAvailabilityDate
+}
+```
+
 Registro
 ```graphql
 mutation Register {
