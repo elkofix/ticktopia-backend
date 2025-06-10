@@ -1,98 +1,85 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Proyecto: Migración de Autenticación y Eventos de REST a GraphQL con NestJS
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Este proyecto implementa un sistema de autenticación de usuarios y gestión de eventos, migrando de una arquitectura REST tradicional a GraphQL utilizando NestJS.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Módulos
 
-## Description
+### 1. Auth (Autenticación y Autorización)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+El módulo `Auth` gestiona el registro, inicio de sesión, autorización basada en roles, actualización y eliminación de usuarios.
 
-## Project setup
+#### Funcionalidades:
+
+* **Registro de Usuario (register)**: Permite a cualquier usuario registrarse.
+* **Registro de Event Manager (registerEventManager)**: Permite al admin registrar usuarios con rol `event-manager`.
+* **Inicio de sesión (login)**: Devuelve un token JWT en una cookie segura.
+* **Obtener todos los usuarios (users)**: Solo accesible por administradores.
+* **Obtener un usuario por ID (user)**: El usuario puede verse a sí mismo, o si es admin, a cualquiera.
+* **Actualizar información del usuario (updateUser)**: Solo se puede actualizar a sí mismo.
+* **Eliminar usuario (deleteUser)**: Solo se puede eliminar a sí mismo.
+* **Actualizar roles (updateUserRoles)**: Solo accesible por administradores.
+
+#### Decoradores personalizados:
+
+* `@Auth(...)`: Protege resolvers mediante validación de roles.
+* `@GetUser()`: Extrae el usuario autenticado desde el contexto.
+
+---
+
+### 2. Events (Gestión de eventos)
+
+El módulo `Event` permite la creación, consulta, actualización y eliminación de eventos, con autorización basada en roles.
+
+#### Funcionalidades:
+
+* **Crear evento (createEvent)**: Requiere rol `event-manager`. El evento se asocia al usuario autenticado.
+* **Consultar eventos públicos (findAllEvents)**: Lista todos los eventos con paginación.
+* **Consultar eventos propios (findEventsByUser)**: Solo accesible por `admin` o `event-manager`, lista eventos creados por el usuario.
+* **Buscar evento sin restricciones (findEventUnrestricted)**: Solo accesible por `admin` o `event-manager`.
+* **Buscar evento (findEvent)**: Público.
+* **Actualizar evento (updateEvent)**: Solo para `event-manager`, que sea creador del evento.
+* **Eliminar evento (removeEvent)**: Accesible por `admin` o `event-manager`.
+
+---
+
+## Tecnologías Usadas
+
+* **NestJS** con **@nestjs/graphql**
+* **GraphQL** (via Apollo Server)
+* **Autenticación JWT**
+* **Autorización por roles personalizados**
+
+---
+
+## Objetivo de la Migración
+
+El propósito de esta migración fue aprovechar la flexibilidad de GraphQL, permitiendo:
+
+* Reducir el overfetching y underfetching de datos.
+* Un esquema estrictamente tipado para validación.
+* Mejor integración con clientes modernos como Apollo Client o Relay.
+
+---
+
+## Notas Adicionales
+
+* El token JWT es gestionado mediante cookies HTTP-only para mayor seguridad.
+* Se aplican controles estrictos para evitar que usuarios no autorizados accedan o modifiquen recursos de otros.
+* El proyecto puede ser extendido para otros roles o entidades según sea necesario.
+
+---
+
+Para ejecutar el proyecto asegúrese de:
+
+1. Tener configurado un backend NestJS con soporte para GraphQL.
+2. Configurar las variables de entorno necesarias para JWT, base de datos, etc.
+3. Ejecutar:
 
 ```bash
-$ npm install
+npm install
+npm run start:dev
 ```
 
-## Compile and run the project
+---
 
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Este proyecto ofrece una arquitectura base sólida para sistemas que requieren control de acceso basado en roles y gestión de recursos personalizados como eventos.
