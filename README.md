@@ -80,6 +80,7 @@ npm install
 npm run start:dev
 ```
 
+4. ahora puedes ir al endpoint [http://localhost:3000/graphql](http://localhost:3000/graphql)
 ---
 
 Este proyecto ofrece una arquitectura base sólida para sistemas que requieren control de acceso basado en roles y gestión de recursos personalizados como eventos.
