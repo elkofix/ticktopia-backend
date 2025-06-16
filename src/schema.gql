@@ -1,0 +1,151 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Ticket {
+  id: ID!
+  buyDate: DateTime!
+  isRedeemed: Boolean!
+  isActive: Boolean!
+  quantity: Int!
+  user: User!
+  presentation: Presentation!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Presentation {
+  idPresentation: ID!
+  place: String!
+  event: Event!
+  capacity: Int!
+  price: Float!
+  openDate: DateTime!
+  startDate: DateTime!
+  latitude: Float!
+  longitude: Float!
+  description: String!
+  ticketAvailabilityDate: DateTime!
+  ticketSaleAvailabilityDate: DateTime!
+  city: String!
+  tickets: [Ticket!]
+}
+
+type Event {
+  id: ID!
+  name: String!
+  bannerPhotoUrl: String
+  isPublic: Boolean!
+  user: User!
+  presentations: [Presentation!]
+}
+
+type User {
+  id: String!
+  email: String!
+  name: String!
+  lastname: String!
+  isActive: Boolean!
+  events: [Event!]!
+  tickets: [Ticket!]!
+  roles: [String!]!
+}
+
+type UserDto {
+  id: String!
+  email: String!
+  name: String!
+  lastname: String!
+  isActive: Boolean!
+  roles: [String!]!
+}
+
+type LoginResponseDto {
+  token: String!
+  user: UserDto!
+}
+
+type DeleteUserResponse {
+  message: String!
+}
+
+type Query {
+  users: [UserDto!]!
+  user(findOneUserInput: FindOneUserDto!): UserDto!
+  findAllEvents(limit: Int! = 10, offset: Int! = 0): [Event!]!
+  findEventsByUser: [Event!]!
+  findEventUnrestricted(term: String!): Event!
+  findEvent(term: String!): Event!
+}
+
+input FindOneUserDto {
+  """A valid uuid"""
+  id: String!
+}
+
+type Mutation {
+  register(createAuthInput: CreateAuthDto!): UserDto!
+  registerEventManager(createAuthInput: CreateAuthDto!): UserDto!
+  login(loginInput: LoginUserDto!): LoginResponseDto!
+  logout: String!
+  updateUser(findOneUserInput: FindOneUserDto!, updateAuthInput: UpdateAuthDto!): UserDto!
+  deleteUser(findOneUserInput: FindOneUserDto!): DeleteUserResponse!
+  updateUserRoles(findOneUserInput: FindOneUserDto!, updateRoleInput: UpdateRoleDto!): UserDto!
+  createEvent(createEventInput: CreateEventDto!): Event!
+  updateEvent(id: String!, updateEventInput: UpdateEventDto!): Event!
+  removeEvent(id: String!): String!
+}
+
+input CreateAuthDto {
+  """A valid email (unique)"""
+  email: String!
+
+  """The password must have a Uppercase, lowercase letter and a number"""
+  password: String!
+  name: String!
+  lastname: String!
+}
+
+input LoginUserDto {
+  """A valid email"""
+  email: String!
+  password: String!
+}
+
+input UpdateAuthDto {
+  """A valid email (unique)"""
+  email: String
+
+  """The password must have a Uppercase, lowercase letter and a number"""
+  password: String
+  name: String
+  lastname: String
+}
+
+input UpdateRoleDto {
+  """List of roles that we want to set to a user"""
+  roles: [ValidRoles!]!
+}
+
+"""Roles válidos para los usuarios"""
+enum ValidRoles {
+  admin
+  eventManager
+  client
+  ticketChecker
+}
+
+input CreateEventDto {
+  name: String!
+  bannerPhotoUrl: String!
+  isPublic: Boolean! = true
+}
+
+input UpdateEventDto {
+  name: String
+  bannerPhotoUrl: String
+  isPublic: Boolean = true
+}

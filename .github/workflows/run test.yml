@@ -1,0 +1,18 @@
+name: Run Tests
+
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Create .env file
+        run: |
+          echo "PORT=3000" >> .env
+          echo "STRIPE_SECRET_KEY=sk_test_51QT6CHAs4cEkYxhecF1lP3ZsiQC7H3mgGK1nlv0VOPkGuOLUWBMqTO83eC5E1BSvhchgvyCYnjhMR4WgSyuXkJv100lm4twQAO" >> .env
+          echo "STRIPE_SIGNATURE=whsec_3kfIgTkQqJ0iv9ecFR1R3CSAhcczMtz2" >> .env
+          echo "BASE_URL=https://back.ticktopia.shop/api" >> .env
+          echo "FRONTEND_URL=http://localhost:8080" >> .env
